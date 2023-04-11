@@ -1,77 +1,96 @@
 from PIL import Image
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 # Define the folder path
-smile_path = './data/smile'
-not_smile_path = './data/non_smile'
-image_size = (64, 64)
+smilePath = './data/smile'
+nonSmilePath = './data/non_smile'
+imgSz = (64, 64)
 
-def processImgs(folder_path, image_size):
+def processImgs(folderPath, imgSz):
     # Create an empty array to hold the image data
-    image_array = np.empty((0, image_size[0] * image_size[1] * 3))
-    print('Shape of image array:', image_array.shape)
+    imgs = np.empty((0, imgSz[0] * imgSz[1] * 3))
+    print('Shape of image array:', imgs.shape)
 
     # Loop through all the images in the folder
-    for filename in os.listdir(folder_path):
+    for filename in os.listdir(folderPath):
         # Load the image file using PIL
-        image = Image.open(os.path.join(folder_path, filename))
+        img = Image.open(os.path.join(folderPath, filename))
         
-        # Resize the image to the desired size
-        image = image.resize(image_size)
+
         
         # Convert the image to a NumPy array and normalize its pixel values
-        image_array_single = np.asarray(image) / 255.0
-        
+        imgTemp = np.asarray(img) / 255.0
+
         # Add an extra dimension to the array
-        image_array_single = np.expand_dims(image_array_single, axis=0)
-        
+        imgTemp = np.expand_dims(imgTemp, axis=0)
+
         # Flatten the image array
-        image_array_single = image_array_single.reshape((1, -1))
+        imgTemp = imgTemp.reshape((1, -1))
+
 
         # Concatenate the new image array with the existing array of images
-        image_array = np.concatenate((image_array, image_array_single), axis=0)
+        imgs = np.concatenate((imgs, imgTemp), axis=0)
 
     # return completed array
-    return image_array
+    return imgs
 
-smiling_images = processImgs(smile_path, image_size)
-not_smiling_images = processImgs(not_smile_path, image_size)
+smileImgs = processImgs(smilePath, imgSz)
+nonSmileImgs = processImgs(nonSmilePath, imgSz)
 
-print('Shape of image array:', smiling_images.shape)
-print('Shape of image array:', not_smiling_images.shape)
+print('Shape of image array:', smileImgs.shape)
+print('Shape of image array:', nonSmileImgs.shape)
 
 # Create the training data
-X = np.concatenate((smiling_images, not_smiling_images), axis=0)
-y = np.concatenate((np.ones(smiling_images.shape[0]), np.zeros(not_smiling_images.shape[0])))
-print(y)
-# Shuffle the data
-shuffle_idx = np.random.permutation(len(X))
-X = X[shuffle_idx]
-y = y[shuffle_idx]
+x = np.concatenate((smileImgs, nonSmileImgs), axis=0)
+y = np.concatenate((np.ones(smileImgs.shape[0]), np.zeros(nonSmileImgs.shape[0])))
 
-# Convert the list of data to a NumPy array
-X = np.array(X)
+np.random.seed(123)
+# Shuffle the data
+shuffleIdx = np.random.permutation(len(x))
+shuffledSet = x[shuffleIdx]
+shuffledLabels = y[shuffleIdx]
+
 # Split the data into training and testing sets
-split_idx = int(len(X) * 0.8)
-X_train = X[:split_idx]
-y_train = y[:split_idx]
-X_test = X[split_idx:]
-y_test = y[split_idx:]
+splitIdx = int(len(shuffledSet) * 0.8)
+trainSet = shuffledSet[:splitIdx]
+trainLabels = shuffledLabels[:splitIdx]
+testSet = shuffledSet[splitIdx:]
+testLabels = shuffledLabels[splitIdx:]
 
 # Define the perceptron class
 class Perceptron():
     def __init__(self, input_dim):
-        self.weights = np.random.randn(input_dim)
+        self.w = np.zeros(input_dim + 1)
     
-    def predict(self, X):
-        return np.where(np.dot(X, self.weights) > 0, 1, 0)
+    def predict(self, x):
+
+        return np.where(np.dot(x, self.w[1:]) + self.w[0] > 0, 1, 0)
     
-    def train(self, X, y, epochs=10, learning_rate=0.1):
+    def train(self, x, t, epochs=200, eta=0.1):
+        accuracyListTrain = []
+        accuracyListTest = []
+
         for epoch in range(epochs):
-            for xi, yi in zip(X, y):
-                prediction = self.predict(xi)
-                self.weights += learning_rate * (yi - prediction) * xi
+            for xi, ti in zip(x, t):
+
+                # Find output of perceptron
+                o = self.predict(xi)  # output
+
+                self.w[1:] += eta * (ti - o) * xi
+                self.w[0] += eta * (ti - o)
+
+
+            predIteration = self.predict(x)
+            trainAccuracy = np.mean(t == predIteration) * 100
+            accuracyListTrain.append(trainAccuracy)
+            predIteration = self.predict(testSet)
+            trainAccuracy = np.mean(testLabels == predIteration) * 100
+            accuracyListTest.append(trainAccuracy)
+        
+        return accuracyListTrain, accuracyListTest
+
 
 class NeuralNetwork():
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -82,43 +101,53 @@ class NeuralNetwork():
         hidden_outputs = np.array([p.predict(X) for p in self.hidden_layer]).T
         return self.output_layer.predict(hidden_outputs)
     
-    def train(self, X, y, epochs=10, learning_rate=0.1):
+    def train(self, X, y, epochs=1, learning_rate=0.01):
         for epoch in range(epochs):
             for xi, yi in zip(X, y):
                 hidden_outputs = np.array([p.predict(xi) for p in self.hidden_layer]).T
                 prediction = self.output_layer.predict(hidden_outputs)
                 error = yi - prediction
                 for i, p in enumerate(self.hidden_layer):
-                    p.weights += learning_rate * error * self.output_layer.weights[i] * xi
-                self.output_layer.weights += learning_rate * error * np.array(hidden_outputs)
+                    p.w += learning_rate * error * self.output_layer.w[i] * xi
+                self.output_layer.w += learning_rate * error * hidden_outputs
 
 
 # Train the perceptron
-input_dim = X_train.shape[1]
+input_dim = trainSet.shape[1]
 perceptron = Perceptron(input_dim)
-perceptron.train(X_train, y_train)
+accuracyListTrain, accuracyListTest = perceptron.train(trainSet, trainLabels)
 
 # Evaluate the perceptron
-y_pred_train = perceptron.predict(X_train)
-train_accuracy = np.mean(y_pred_train == y_train)
+y_pred_train = perceptron.predict(trainSet) 
+train_accuracy = np.mean(y_pred_train == trainLabels)
 print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
 
-y_pred_test = perceptron.predict(X_test)
-test_accuracy = np.mean(y_pred_test == y_test)
+y_pred_test = perceptron.predict(testSet)
+test_accuracy = np.mean(y_pred_test == testLabels)
 print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
 
-# Train the neural network
-input_dim = X_train.shape[1]
-hidden_dim = 100
-output_dim = 1
-nn = NeuralNetwork(input_dim, hidden_dim, output_dim)
-nn.train(X_train, y_train)
+# Plot the accuracy over epochs
+plt.plot(accuracyListTrain, label='Training accuracy')
+plt.plot(accuracyListTest, label='Testing accuracy')
 
-# Evaluate the neural network
-y_pred_train = nn.forward(X_train)
-train_accuracy = np.mean(y_pred_train == y_train)
-print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy (%)')
+plt.show()
 
-y_pred_test = nn.forward(X_test)
-test_accuracy = np.mean(y_pred_test == y_test)
-print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
+
+# # Train the neural network
+# input_dim = trainSet.shape[1]
+# hidden_dim = 1
+# output_dim = 1
+# nn = NeuralNetwork(input_dim, hidden_dim, output_dim)
+# nn.train(trainSet, trainLabels)
+
+# # Evaluate the neural network
+# y_pred_train = nn.forward(trainSet)
+# train_accuracy = np.mean(y_pred_train == trainLabels)
+# print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
+
+# y_pred_test = nn.forward(testSet)
+# test_accuracy = np.mean(y_pred_test == testLabels)
+# print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
