@@ -68,7 +68,7 @@ class Perceptron():
 
         return np.where(np.dot(x, self.w[1:]) + self.w[0] > 0, 1, 0)
     
-    def train(self, x, t, epochs=200, eta=0.1):
+    def train(self, x, t, epochs=200, eta=0.01):
         accuracyListTrain = []
         accuracyListTest = []
 
@@ -129,7 +129,7 @@ print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
 # Plot the accuracy over epochs
 plt.plot(accuracyListTrain, label='Training accuracy')
 plt.plot(accuracyListTest, label='Testing accuracy')
-
+plt.legend()
 plt.title('Accuracy over Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy (%)')
