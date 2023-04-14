@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\data",
+    "\\Figures"
   ],
-  "SelectedNode": "\\C:\\Users\\anngu\\OneDrive - University of Oklahoma\\University of Oklahoma\\2023 Spring\\CS 5033 - Machine Learning\\Projects\\Supervised Learning\\Smile Or Not",
+  "SelectedNode": "\\LogisticRegression.py",
   "PreviewInSolutionExplorer": false
 }
