@@ -1,8 +1,9 @@
 from PIL import Image
 import numpy as np
+import pandas as pd
 import os
-import matplotlib.pyplot as plt
 import math
+import matplotlib.pyplot as plt
 
 # Define the folder path
 smilePath = './data/smile'
@@ -11,30 +12,24 @@ imgSz = (64, 64)
 
 def processImgs(folderPath, imgSz):
     # Create an empty array to hold the image data
-    imgs = np.empty((0, imgSz[0] * imgSz[1] * 3))
-    print('Shape of image array:', imgs.shape)
+    imgs_array = []
 
     # Loop through all the images in the folder
     for filename in os.listdir(folderPath):
         # Load the image file using PIL
         img = Image.open(os.path.join(folderPath, filename))
         
-
-        
         # Convert the image to a NumPy array and normalize its pixel values
-        imgTemp = np.asarray(img) / 255.0
+        imgTemp = np.array(img)
 
         # Add an extra dimension to the array
-        imgTemp = np.expand_dims(imgTemp, axis=0)
-
-        # Flatten the image array
-        imgTemp = imgTemp.reshape((1, -1))
-
+        imgTemp = imgTemp.flatten()
 
         # Concatenate the new image array with the existing array of images
-        imgs = np.concatenate((imgs, imgTemp), axis=0)
+        imgs_array.append(imgTemp)
 
     # return completed array
+    imgs = np.array(imgs_array)
     return imgs
 
 smileImgs = processImgs(smilePath, imgSz)
@@ -84,14 +79,13 @@ class LogisticRegression():
             gradient = np.zeros(len(x[0]) + 1) # intialize gradient to 0
             for xi, ti in zip(x, t):
                 xi = np.insert(xi, 0, 1, axis=0)
-                numerator = (ti * xi)
-                denominator = (1 + np.exp(ti * np.dot(self.w,xi)))
+                numerator = ti * xi
+                denominator = 1 + np.exp(ti * np.dot(self.w, xi))
                 gradient += numerator / denominator
             gradient = -1/m * gradient
 
             # 2. Update the weights
             self.w -= eta*gradient
-            
 
             """
             w_inc = np.zeros(len(self.w))
