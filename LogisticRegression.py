@@ -63,11 +63,11 @@ testLabels = shuffledLabels[splitIdx:]
 # Define the perceptron class
 class LogisticRegression():
     def __init__(self, input_dim):
-        self.w = np.zeros(input_dim)
+        self.w = np.zeros(input_dim + 1)
     
     def predict(self, x):
 
-        return np.where(np.dot(x, self.w)> 0, 1, 0)
+        return np.where(np.dot(x, self.w[1:]) + self.w[0] > 0, 1, 0)
     
     def train(self, x, t, epochs=200, eta=0.01):
         accuracyListTrain = []
@@ -76,14 +76,14 @@ class LogisticRegression():
         for epoch in range(epochs):
             # 1. Calculate the gradient
             m = len(x)
-            gradient = np.zeros(len(x[0])) # intialize gradient to 0
+            gradient = np.zeros(len(x[0]) + 1) # intialize gradient to 0
             for xi, ti in zip(x, t):
+                xi = np.insert(xi, 0, 1, axis=0)
                 gradient += (ti * xi) / (1 + math.exp(ti * np.dot(self.w, xi)))
             gradient = -1/m * gradient
 
             # 2. Update the weights
             self.w -= eta*gradient
-            print(self.w)
 
             # Get prediction rates after training
             predIteration = self.predict(x)
