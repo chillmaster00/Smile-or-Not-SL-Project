@@ -78,7 +78,7 @@ class LogisticRegression():
         accuracyListTest = []
 
         for epoch in range(epochs):
-            """
+            
             # 1. Calculate the gradient
             m = len(x)
             gradient = np.zeros(len(x[0]) + 1) # intialize gradient to 0
@@ -91,9 +91,9 @@ class LogisticRegression():
 
             # 2. Update the weights
             self.w -= eta*gradient
-            """
-
             
+
+            """
             w_inc = np.zeros(len(self.w))
             for xi, ti in zip(x, t):
                 o = self.predict(xi)
@@ -102,7 +102,7 @@ class LogisticRegression():
                 w_inc[0] += eta * (ti - o)
 
             self.w += w_inc
-
+            """
 
 
             # Get prediction rates after training
