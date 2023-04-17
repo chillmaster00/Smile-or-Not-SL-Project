@@ -92,39 +92,20 @@ class Perceptron():
         return accuracyListTrain, accuracyListTest
 
 
-class NeuralNetwork():
-    def __init__(self, input_dim, hidden_dim, output_dim):
-        self.hidden_layer = [Perceptron(input_dim) for i in range(hidden_dim)]
-        self.output_layer = Perceptron(hidden_dim)
-    
-    def forward(self, X):
-        hidden_outputs = np.array([p.predict(X) for p in self.hidden_layer]).T
-        return self.output_layer.predict(hidden_outputs)
-    
-    def train(self, X, y, epochs=1, learning_rate=0.01):
-        for epoch in range(epochs):
-            for xi, yi in zip(X, y):
-                hidden_outputs = np.array([p.predict(xi) for p in self.hidden_layer]).T
-                prediction = self.output_layer.predict(hidden_outputs)
-                error = yi - prediction
-                for i, p in enumerate(self.hidden_layer):
-                    p.w += learning_rate * error * self.output_layer.w[i] * xi
-                self.output_layer.w += learning_rate * error * hidden_outputs
-
 
 # Train the perceptron
-input_dim = trainSet.shape[1]
-perceptron = Perceptron(input_dim)
+inputSize = trainSet.shape[1]
+perceptron = Perceptron(inputSize)
 accuracyListTrain, accuracyListTest = perceptron.train(trainSet, trainLabels)
 
 # Evaluate the perceptron
-y_pred_train = perceptron.predict(trainSet) 
-train_accuracy = np.mean(y_pred_train == trainLabels)
-print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
+predTrain = perceptron.predict(trainSet) 
+trainAcc = np.mean(predTrain == trainLabels)
+print('Training accuracy: {:.2f}%'.format(trainAcc * 100))
 
-y_pred_test = perceptron.predict(testSet)
-test_accuracy = np.mean(y_pred_test == testLabels)
-print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
+predTest = perceptron.predict(testSet)
+testAcc = np.mean(predTest == testLabels)
+print('Testing accuracy: {:.2f}%'.format(testAcc * 100))
 
 # Plot the accuracy over epochs
 plt.plot(accuracyListTrain, label='Training accuracy')
@@ -136,18 +117,3 @@ plt.ylabel('Accuracy (%)')
 plt.show()
 
 
-# # Train the neural network
-# input_dim = trainSet.shape[1]
-# hidden_dim = 1
-# output_dim = 1
-# nn = NeuralNetwork(input_dim, hidden_dim, output_dim)
-# nn.train(trainSet, trainLabels)
-
-# # Evaluate the neural network
-# y_pred_train = nn.forward(trainSet)
-# train_accuracy = np.mean(y_pred_train == trainLabels)
-# print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
-
-# y_pred_test = nn.forward(testSet)
-# test_accuracy = np.mean(y_pred_test == testLabels)
-# print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
