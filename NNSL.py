@@ -45,7 +45,10 @@ print('Shape of image array:', nonSmileImgs.shape)
 # Create the training data
 x = np.concatenate((smileImgs, nonSmileImgs), axis=0)
 y = np.concatenate((np.ones(smileImgs.shape[0]), np.zeros(nonSmileImgs.shape[0])))
-
+# Convert y to one-hot encoded vectors
+one_hot_y = np.zeros((y.size, 2))
+one_hot_y[np.arange(y.size), y.astype(int)] = 1
+y = one_hot_y
 np.random.seed(123)
 # Shuffle the data
 shuffleIdx = np.random.permutation(len(x))
@@ -71,7 +74,7 @@ class neuralNet:
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
     def sigmoidDerivative(self, x):
-        return x * (1 - x)
+        return self.sigmoid(x) * (1 - self.sigmoid(x))
     
     # feed forward thru neural net
     def feedForward(self, X):
@@ -88,11 +91,12 @@ class neuralNet:
     # back propagation 
     def backProp(self, x, t, o, eta):
         # First calulate the backpropagation thru the output layer
+
         sigmaO = (t - o) * self.sigmoidDerivative(o)
         deltaO = np.dot(self.oH.T, sigmaO)              # dot product w/ weights from prev layer
         
         # Next calculate hidden layer backprop
-        sigmaH = np.dot(sigmaO, self.wO) * self.sigmoidDerivative(self.oH)
+        sigmaH = np.dot(sigmaO, self.wO.T) * self.sigmoidDerivative(self.oH)
         deltaH = np.dot(x.T, sigmaH)
 
         #update values
@@ -102,6 +106,8 @@ class neuralNet:
         self.bO += eta * np.sum(sigmaO, axis=0)
         
     def train(self, x, t, epochs, eta):
+        accuracyListTrain = []
+        accuracyListTest = []
         for epoch in range(epochs):
             # feed foward to receive outputs
             o = self.feedForward(x)
@@ -109,31 +115,47 @@ class neuralNet:
             # backpropagate those outputs
             self.backProp(x, t, o, eta)
 
-            if epoch % 1000 == 0:
-                # displays MSE every 1000 epochs
-                loss = np.mean(np.square(t - o))
-                print("Epoch:", epoch, "Loss:", loss)
+            # document accuracy
+            predIteration = self.predict(x)
+            trainAccuracy = np.mean(t == predIteration) * 100
+            accuracyListTrain.append(trainAccuracy)
+            predIteration = self.predict(testSet)
+            trainAccuracy = np.mean(testLabels == predIteration) * 100
+            accuracyListTest.append(trainAccuracy)
+        
+        return accuracyListTrain, accuracyListTest
 
-    def print_weights(self):
-        print("Weights of hidden layer:", self.wH)
+    def predict(self, X):
+
+        o = self.feedForward(X)
+        return np.where(o > 0.5, 1, 0) 
+
 
 
 # Train the perceptron
 inputSize = trainSet.shape[1]
-hiddenSize = 10
-outputSize = 1
+hiddenSize = 100
+outputSize = 2
 eta = 0.05
-epochs = 100
+epochs = 20000
 
 nn = neuralNet(inputSize, hiddenSize, outputSize)
-nn.train(trainSet, trainLabels, epochs, eta)
+accuracyListTrain, accuracyListTest = nn.train(trainSet, trainLabels, epochs, eta)
 
-# Evaluate the neural network
-y_pred_train = nn.feedForward(trainSet)
-print(y_pred_train)
-train_accuracy = np.mean(y_pred_train == trainLabels)
-print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
+# Evaluate the perceptron
+predTrain = nn.predict(trainSet) 
+trainAcc = np.mean(predTrain == trainLabels)
+print('Training accuracy: {:.2f}%'.format(trainAcc * 100))
 
-y_pred_test = nn.forward(testSet)
-test_accuracy = np.mean(y_pred_test == testLabels)
-print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
+predTest = nn.predict(testSet)
+testAcc = np.mean(predTest == testLabels)
+print('Testing accuracy: {:.2f}%'.format(testAcc * 100))
+
+# Plot the accuracy over epochs
+plt.plot(accuracyListTrain, label='Training accuracy')
+plt.plot(accuracyListTest, label='Testing accuracy')
+plt.legend()
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy (%)')
+plt.show()
