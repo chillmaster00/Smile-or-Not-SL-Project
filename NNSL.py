@@ -137,7 +137,7 @@ inputSize = trainSet.shape[1]
 hiddenSize = 100
 outputSize = 2
 eta = 0.05
-epochs = 20000
+epochs = 30000
 
 nn = neuralNet(inputSize, hiddenSize, outputSize)
 accuracyListTrain, accuracyListTest = nn.train(trainSet, trainLabels, epochs, eta)
