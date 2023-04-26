@@ -40,7 +40,7 @@ print('Shape of image array:', nonSmileImgs.shape)
 
 # Create the training data
 x = np.concatenate((smileImgs, nonSmileImgs), axis=0)
-y = np.concatenate((np.ones(smileImgs.shape[0]), np.zeros(nonSmileImgs.shape[0])))
+y = np.concatenate((np.ones(smileImgs.shape[0]), -1*np.ones(nonSmileImgs.shape[0])))
 
 np.random.seed(123)
 # Shuffle the data
@@ -63,7 +63,7 @@ class LogisticRegression():
     def predict(self, x):
         sum = np.dot(x, self.w[1:]) + self.w[0]
         sig = self.sigmoid(sum)
-        return np.where(sig >= 0.5, 1, 0)
+        return np.where(sig >= 0.5, 1, -1)
     
     def sigmoid(self, s):
         return 1 / (1 + np.exp(-s))
@@ -75,18 +75,19 @@ class LogisticRegression():
         for epoch in range(epochs):
             
             # 1. Calculate the gradient
-            m = len(x)
-            gradient = np.zeros(len(x[0]) + 1) # intialize gradient to 0
-            for xi, ti in zip(x, t):
-                xi = np.insert(xi, 0, 1, axis=0)
-                numerator = ti * xi
-                denominator = 1 + np.exp(ti * np.dot(self.w, xi))
+            m = x.shape[0] # Number of rows
+            n = x.shape[1] # Number of dimensions
+
+            gradient = np.zeros(n + 1) # intialize gradient to 0
+            for i in range(m):
+                numerator = t[i] * x[i]
+                denominator = 1 + math.exp(t[i] * (np.dot(self.w[1:], x[i]) + self.w[0]))
                 gradient += numerator / denominator
             gradient = -1/m * gradient
 
             # 2. Update the weights
-            self.w -= eta*gradient
-
+            self.w -= eta*gradient / np.linalg.norm(gradient)
+            
             """
             w_inc = np.zeros(len(self.w))
             for xi, ti in zip(x, t):
