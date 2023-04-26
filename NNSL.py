@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 # Define the folder path
 smilePath = './data/smile'
@@ -108,7 +109,7 @@ class neuralNet:
     def train(self, x, t, epochs, eta):
         accuracyListTrain = []
         accuracyListTest = []
-        for epoch in range(epochs):
+        for epoch in tqdm(range(epochs)):
             # feed foward to receive outputs
             o = self.feedForward(x)
 
@@ -126,9 +127,14 @@ class neuralNet:
         return accuracyListTrain, accuracyListTest
 
     def predict(self, X):
-
         o = self.feedForward(X)
-        return np.where(o > 0.5, 1, 0) 
+        results = np.zeros(o.shape)
+        for i in range(o.shape[0]):
+            if(o[i][0] > o[i][1]):
+                results[i][0] = 1
+            else:
+                results[i][1] = 1
+        return results
 
 
 
@@ -137,7 +143,8 @@ inputSize = trainSet.shape[1]
 hiddenSize = 100
 outputSize = 2
 eta = 0.05
-epochs = 30000
+epochs = 5000
+
 
 nn = neuralNet(inputSize, hiddenSize, outputSize)
 accuracyListTrain, accuracyListTest = nn.train(trainSet, trainLabels, epochs, eta)
@@ -159,3 +166,5 @@ plt.title('Accuracy over Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy (%)')
 plt.show()
+
+print("done")

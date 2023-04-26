@@ -68,7 +68,7 @@ class Perceptron():
 
         return np.where(np.dot(x, self.w[1:]) + self.w[0] > 0, 1, 0)
     
-    def train(self, x, t, epochs=200, eta=0.01):
+    def train(self, x, t, epochs=100, eta=0.01):
         accuracyListTrain = []
         accuracyListTest = []
 
@@ -96,7 +96,7 @@ class Perceptron():
 # Train the perceptron
 inputSize = trainSet.shape[1]
 perceptron = Perceptron(inputSize)
-accuracyListTrain, accuracyListTest = perceptron.train(trainSet, trainLabels)
+accuracyListTrain, accuracyListTest = perceptron.train(trainSet, trainLabels, epochs = 225)
 
 # Evaluate the perceptron
 predTrain = perceptron.predict(trainSet) 
