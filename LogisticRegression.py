@@ -42,7 +42,6 @@ print('Shape of image array:', nonSmileImgs.shape)
 x = np.concatenate((smileImgs, nonSmileImgs), axis=0)
 y = np.concatenate((np.ones(smileImgs.shape[0]), -1*np.ones(nonSmileImgs.shape[0])))
 
-np.random.seed(123)
 # Shuffle the data
 shuffleIdx = np.random.permutation(len(x))
 shuffledSet = x[shuffleIdx]
@@ -61,8 +60,8 @@ class LogisticRegression():
         self.w = np.zeros(input_dim + 1)
     
     def predict(self, x):
-        sum = np.dot(x, self.w[1:]) + self.w[0]
-        sig = self.sigmoid(sum)
+        s = np.dot(x, self.w[1:]) + self.w[0]
+        sig = self.sigmoid(s)
         return np.where(sig >= 0.5, 1, -1)
     
     def sigmoid(self, s):
@@ -79,25 +78,15 @@ class LogisticRegression():
             n = x.shape[1] # Number of dimensions
 
             gradient = np.zeros(n + 1) # intialize gradient to 0
-            for i in range(m):
-                numerator = t[i] * x[i]
-                denominator = 1 + math.exp(t[i] * (np.dot(self.w[1:], x[i]) + self.w[0]))
+            for xi, ti in zip(x, t): # sum together
+                xi = np.insert(xi, 0, 1)
+                numerator = ti * xi
+                denominator = 1 + math.exp(ti * np.dot(self.w, xi))
                 gradient += numerator / denominator
-            gradient = -1/m * gradient
+            gradient = -1/m * gradient # divide
 
             # 2. Update the weights
             self.w -= eta*gradient / np.linalg.norm(gradient)
-            
-            """
-            w_inc = np.zeros(len(self.w))
-            for xi, ti in zip(x, t):
-                o = self.predict(xi)
-
-                w_inc[1:] += eta * (ti - o) * xi
-                w_inc[0] += eta * (ti - o)
-
-            self.w += w_inc
-            """
 
 
             # Get prediction rates after training
@@ -120,10 +109,12 @@ accuracyListTrain, accuracyListTest = regr.train(trainSet, trainLabels)
 y_regr_train = regr.predict(trainSet) 
 train_accuracy = np.mean(y_regr_train == trainLabels)
 print('Training accuracy: {:.2f}%'.format(train_accuracy * 100))
+print('Training accuracy: {:.2f}%'.format(accuracyListTrain[198]))
 
 y_pred_test = regr.predict(testSet)
 test_accuracy = np.mean(y_pred_test == testLabels)
 print('Testing accuracy: {:.2f}%'.format(test_accuracy * 100))
+print('Testing accuracy: {:.2f}%'.format(accuracyListTest[198]))
 
 # Plot the accuracy over epochs
 plt.plot(accuracyListTrain, label='Training accuracy')
@@ -132,4 +123,16 @@ plt.legend()
 plt.title('Accuracy over Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy (%)')
+plt.savefig('Figures\\LRegr.png')
+plt.show()
+
+
+# Plot the accuracy over epochs
+plt.plot(accuracyListTrain[::2], label='Training accuracy')
+plt.plot(accuracyListTest[::2], label='Testing accuracy')
+plt.legend()
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy (%)')
+plt.savefig('Figures\\LRegr_alt.png')
 plt.show()
