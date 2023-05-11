@@ -11,7 +11,7 @@ NON_SMILE_PATH = './data/non_smile'
 IMAGE_SIZE = (64, 64)
 
 NUM_TRIALS = 30
-NUM_EPOCHS = 200
+NUM_EPOCHS = 300
 
 # Read a Folder of Images
 #   and return one array of 1D arrays representing
@@ -102,11 +102,11 @@ def process_images_novel(folder_path):
                 # and find where current pixel is sorted to
                 #   using example 1 from https://www.geeksforgeeks.org/how-to-find-the-index-of-value-in-numpy-array/
                 sort_index = np.argsort(pixels_to_sort_R)
-                rank_R = np.where(sort_index == 0)[0][0]
+                rank_R = np.where(sort_index == 0)[0][0] + 1
                 sort_index = np.argsort(pixels_to_sort_G)
-                rank_G = np.where(sort_index == 0)[0][0]
+                rank_G = np.where(sort_index == 0)[0][0] + 1
                 sort_index = np.argsort(pixels_to_sort_B)
-                rank_B = np.where(sort_index == 0)[0][0]
+                rank_B = np.where(sort_index == 0)[0][0] + 1
 
                 # store each rank
                 img_rank[x, y, 0] = rank_R
@@ -346,6 +346,25 @@ def LogisticRegression_Experiment():
 
     return accuracyListTrain, accuracyListTest
 
+# Logistic Regression (Novel) section
+def LogisticRegressionNovel_Experiment():
+    # Concatenate image arrays and get labels
+    x_nb = np.concatenate((smile_images_novel, non_smile_images_novel), axis=0)
+    y_nb = np.concatenate((np.ones(smile_images_novel.shape[0]), -1*np.ones(non_smile_images_novel.shape[0])))
+
+    # Shuffle and get training/test sets
+    shuffled_x, shuffled_y = p_shuffle(x_nb, y_nb, len(x_nb))
+
+    training_x, testing_x = split_array(shuffled_x, int(0.8*len(shuffled_x)))
+    training_y, testing_y = split_array(shuffled_y, int(0.8*len(shuffled_y)))
+
+    # Train the logistic regression method
+    input_dim = training_x.shape[1]
+    regr = LogisticRegression(input_dim)
+    accuracyListTrain, accuracyListTest = regr.train(training_x, training_y, testing_x, testing_y)
+
+    return accuracyListTrain, accuracyListTest
+
 
 
 # Run experiments for NUM_TRIALS trials
@@ -458,4 +477,54 @@ plt.title('Accuracy over Epochs')
 plt.xlabel('Epochs (x2)')
 plt.ylabel('Accuracy (%)')
 plt.savefig('Figures\\LRegr_alt.png')
+plt.clf()
+
+
+
+# Run Logistic Regression (Novel) experiments
+train_results = []
+test_results = []
+trainAvgVals =  np.zeros(NUM_EPOCHS)
+testAvgVals =  np.zeros(NUM_EPOCHS)
+
+# Run experiments
+print("Running Logistic Regression (Novel) Experiments")
+for _ in range(NUM_TRIALS):
+    print(f"\tRunning Experiment {_}")
+    accuracyListTrain, accuracyListTest = LogisticRegressionNovel_Experiment()
+    train_results.append(accuracyListTrain)
+    test_results.append(accuracyListTest)
+
+# Get average for results
+for i in range(NUM_EPOCHS):
+    trainVals = [result[i] for result in train_results]
+    trainAvgVals[i] = np.mean(trainVals)
+    testVals = [result[i] for result in test_results]
+    testAvgVals[i] = np.mean(testVals)
+
+# Plot the accuracy over epochs
+print(f"\tAverage Training Accuracy (raw): {trainAvgVals[NUM_EPOCHS-1]}")
+print(f"\tAverage Testing Accuracy (raw): {testAvgVals[NUM_EPOCHS-1]}")
+
+plt.plot(trainAvgVals, label='Training accuracy')
+plt.plot(testAvgVals, label='Testing accuracy')
+plt.legend()
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy (%)')
+plt.savefig('Figures\\LRegrNovel.png')
+plt.clf()
+
+
+# Plot every other accuracy over epochs
+print(f"\tAverage Training Accuracy (raw): {trainAvgVals[NUM_EPOCHS-2]}")
+print(f"\tAverage Testing Accuracy (raw): {testAvgVals[NUM_EPOCHS-2]}")
+
+plt.plot(trainAvgVals[::2], label='Training accuracy')
+plt.plot(testAvgVals[::2], label='Testing accuracy')
+plt.legend()
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epochs (x2)')
+plt.ylabel('Accuracy (%)')
+plt.savefig('Figures\\LRegrNovel_alt.png')
 plt.clf()
